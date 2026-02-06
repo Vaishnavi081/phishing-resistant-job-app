@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Post Job{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Post a Job</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-4">
+                    <small>
+                        <strong>Note:</strong> Jobs are automatically screened for phishing risks.
+                        High-risk jobs (>70 score) are automatically rejected.
+                    </small>
+                </div>
+                
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Job Title *</label>
+                            <input type="text" class="form-control" name="title" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Job Type *</label>
+                            <select class="form-select" name="job_type" required>
+                                <option value="full-time">Full Time</option>
+                                <option value="intern">Internship</option>
+                                <option value="contract">Contract</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Company Name *</label>
+                            <input type="text" class="form-control" name="company" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Contact Email *</label>
+                            <input type="email" class="form-control" name="email" required>
+                            <small class="text-muted">Must be a valid company email</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Job Description *</label>
+                        <textarea class="form-control" name="description" rows="5" required></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">Application Link *</label>
+                            <input type="url" class="form-control" name="apply_link" 
+                                   id="applyLink" required>
+                            <div class="mt-2">
+                                <small>Risk Score: <span id="riskScore">0</span>/100</small>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar" id="riskBar" style="width: 0%"></div>
+                                </div>
+                                <small id="riskMessage" class="text-muted">Enter URL to see risk score</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Location *</label>
+                            <input type="text" class="form-control" name="location" required>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning" id="riskWarning" style="display: none;">
+                        <strong>Warning:</strong> High risk detected. This job may be rejected.
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Post Job</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const applyLink = document.getElementById('applyLink');
+const riskScore = document.getElementById('riskScore');
+const riskBar = document.getElementById('riskBar');
+const riskMessage = document.getElementById('riskMessage');
+const riskWarning = document.getElementById('riskWarning');
+
+function calculateRisk() {
+    const url = applyLink.value;
+    
+    if (!url) {
+        riskScore.textContent = '0';
+        riskBar.style.width = '0%';
+        riskMessage.textContent = 'Enter URL to see risk score';
+        riskWarning.style.display = 'none';
+        return;
+    }
+    
+    fetch('/calculate-risk', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({url: url, description: ''})
+    })
+    .then(response => response.json())
+    .then(data => {
+        riskScore.textContent = data.score;
+        riskBar.style.width = data.score + '%';
+        riskBar.className = `progress-bar bg-${data.color}`;
+        riskMessage.textContent = data.badge;
+        
+        if (data.score > 70) {
+            riskWarning.style.display = 'block';
+        } else {
+            riskWarning.style.display = 'none';
+        }
+    })
+    .catch(() => {
+        riskScore.textContent = 'Error';
+        riskMessage.textContent = 'Could not calculate risk';
+    });
+}
+
+applyLink.addEventListener('blur', calculateRisk);
+applyLink.addEventListener('input', function() {
+    clearTimeout(this.timer);
+    this.timer = setTimeout(calculateRisk, 500);
+});
+</script>
+{% endblock %}

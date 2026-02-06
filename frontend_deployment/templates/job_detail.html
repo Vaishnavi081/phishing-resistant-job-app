@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}{{ job.title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card my-4">
+        <div class="card-header">
+            <h3>{{ job.title }}</h3>
+            {% if job.risk_score < 30 %}
+                <span class="badge bg-success">🟢 Safe</span>
+            {% elif job.risk_score < 70 %}
+                <span class="badge bg-warning">🟡 Caution</span>
+            {% else %}
+                <span class="badge bg-danger">🔴 High Risk</span>
+            {% endif %}
+        </div>
+        
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <p><strong>Company:</strong> {{ job.company }}</p>
+                    <p><strong>Location:</strong> {{ job.location }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Type:</strong> {{ job.job_type|title }}</p>
+                    <p><strong>Posted:</strong> {{ job.created_at.strftime('%B %d, %Y') }}</p>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="risk-section mb-4">
+                <h5>Risk Analysis</h5>
+                <p><strong>Risk Score:</strong> <span id="riskScore">{{ job.risk_score }}</span>/100</p>
+                
+                <div class="progress my-3">
+                    <div class="progress-bar" id="riskBar"></div>
+                </div>
+                
+                <div class="alert small" id="riskAlert">
+                    {% if job.risk_score < 30 %}
+                        <i class="bi bi-check-circle"></i> This job appears safe and legitimate.
+                    {% elif job.risk_score < 70 %}
+                        <i class="bi bi-exclamation-triangle"></i> Use caution with this listing. Verify company details.
+                    {% else %}
+                        <i class="bi bi-exclamation-octagon"></i> High risk detected. Exercise extreme caution.
+                    {% endif %}
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="description-box mb-4">
+                <h5>Job Description</h5>
+                <p>{{ job.description }}</p>
+            </div>
+            
+            <hr>
+            
+            <div class="company-box mb-4">
+                <h5>Contact Information</h5>
+                <p><strong>Email:</strong> {{ job.email }}</p>
+                <p><strong>Application Link:</strong> 
+                    <a href="{{ job.apply_link }}" target="_blank">{{ job.apply_link }}</a>
+                </p>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <a href="{{ job.apply_link }}" target="_blank" class="btn btn-primary">
+                    <i class="bi bi-box-arrow-up-right"></i> Apply Now
+                </a>
+                
+                {% if current_user.is_student() %}
+                <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#reportModal">
+                    <i class="bi bi-flag"></i> Report Job
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Set progress bar width using JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    const riskScore = document.getElementById('riskScore').textContent;
+    const riskBar = document.getElementById('riskBar');
+    const riskAlert = document.getElementById('riskAlert');
+    
+    if (riskBar) {
+        const score = parseInt(riskScore);
+        riskBar.style.width = score + '%';
+        
+        if (score < 30) {
+            riskBar.className = 'progress-bar bg-success';
+            riskAlert.className = 'alert alert-success small';
+        } else if (score < 70) {
+            riskBar.className = 'progress-bar bg-warning';
+            riskAlert.className = 'alert alert-warning small';
+        } else {
+            riskBar.className = 'progress-bar bg-danger';
+            riskAlert.className = 'alert alert-danger small';
+        }
+    }
+});
+</script>
+
+<style>
+.progress {
+    height: 12px;
+    border-radius: 6px;
+    background-color: #e9ecef;
+}
+.progress-bar {
+    border-radius: 6px;
+    transition: width 0.6s ease;
+}
+.card {
+    border-radius: 12px;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.description-box {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #0d6efd;
+}
+.company-box {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+}
+</style>
+
+<!-- Include report modal HTML from your other templates -->
+{% endblock %}

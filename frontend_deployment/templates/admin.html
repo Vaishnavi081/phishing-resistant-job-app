@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Admin Dashboard</h2>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Flagged Jobs</h5>
+                <p class="card-text display-6">{{ flagged_jobs|length }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">Pending Review</h5>
+                <p class="card-text display-6">{{ pending_jobs|length }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title">Total Reports</h5>
+                <p class="card-text display-6">{{ reports|length }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Actions</h5>
+                <p class="card-text">Manage content</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Flagged Jobs</h5>
+            </div>
+            <div class="card-body">
+                {% for job in flagged_jobs %}
+                    <div class="border-bottom pb-3 mb-3">
+                        <div class="d-flex justify-content-between">
+                            <h6>{{ job.title }}</h6>
+                            <span class="badge bg-danger">Score: {{ job.risk_score }}</span>
+                        </div>
+                        <p class="small text-muted mb-2">{{ job.company }} • {{ job.email }}</p>
+                        <div class="btn-group btn-group-sm">
+                            <a href="/admin/job/{{ job.id }}/approve" class="btn btn-success">Approve</a>
+                            <a href="/admin/job/{{ job.id }}/reject" class="btn btn-warning">Reject</a>
+                            <a href="/admin/job/{{ job.id }}/delete" class="btn btn-danger">Delete</a>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">No flagged jobs</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Pending Jobs</h5>
+            </div>
+            <div class="card-body">
+                {% for job in pending_jobs %}
+                    <div class="border-bottom pb-3 mb-3">
+                        <div class="d-flex justify-content-between">
+                            <h6>{{ job.title }}</h6>
+                            <span class="badge bg-warning">Pending</span>
+                        </div>
+                        <p class="small text-muted mb-2">Risk: {{ job.risk_score }}</p>
+                        <div class="btn-group btn-group-sm">
+                            <a href="/admin/job/{{ job.id }}/approve" class="btn btn-success">Approve</a>
+                            <a href="/admin/job/{{ job.id }}/reject" class="btn btn-danger">Reject</a>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">No pending jobs</p>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Reports</h5>
+            </div>
+            <div class="card-body">
+                {% for report in reports[-5:] %}
+                    <div class="border-bottom pb-2 mb-2">
+                        <p class="small mb-1">
+                            <strong>Job ID {{ report.job_id }}</strong> • 
+                            {{ report.reason }} • 
+                            <span class="text-muted">{{ report.created_at.strftime('%H:%M') }}</span>
+                        </p>
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">No reports</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

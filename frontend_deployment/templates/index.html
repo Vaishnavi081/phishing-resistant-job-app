@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Secure Job Portal{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-4 fw-bold mb-4">
+        Find Real Jobs.<br>
+        <span class="text-primary">Avoid Fake Postings.</span>
+    </h1>
+    
+    <p class="lead mb-4">
+        Phishing-resistant job portal with domain verification,<br>
+        link scanning, and collaborative reporting.
+    </p>
+    
+    {% if not current_user.is_authenticated %}
+        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+            <a href="/register" class="btn btn-primary btn-lg px-4 me-md-2">
+                Get Started
+            </a>
+            <a href="/login" class="btn btn-outline-secondary btn-lg px-4">
+                Login
+            </a>
+        </div>
+    {% else %}
+        <a href="/dashboard" class="btn btn-primary btn-lg px-4">
+            Go to Dashboard
+        </a>
+    {% endif %}
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">Domain Verification</h5>
+                <p class="card-text">
+                    Every employer email is verified with DNS MX records
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">Risk Scoring</h5>
+                <p class="card-text">
+                    Links scanned for phishing indicators in real-time
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">Collaborative Reporting</h5>
+                <p class="card-text">
+                    Students report suspicious jobs, auto-flag at 3+ reports
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

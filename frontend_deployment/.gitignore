@@ -1,0 +1,35 @@
+# Person 3 - Frontend & Deployment gitignore
+# Hackathon MVP - Minimal version
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+
+# Virtual Environment
+venv/
+.venv/
+
+# Environment variables
+.env
+
+# Database (SQLite)
+*.db
+app.db
+
+# Uploads (user files)
+uploads/
+!uploads/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs (if any)
+*.log
