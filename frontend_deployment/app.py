@@ -1,174 +1,30 @@
 """
 MVP Flask Application - Person 3
 ENHANCED with complete job application system
-Merged by: [Your Name] - Backend Developer
+Merged by: Backend Developer
+
+USES: Person 1's models.py for database models
 """
 
 import os
+import json
+from datetime import datetime
 from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, TextAreaField, SelectField, IntegerField
 from wtforms.validators import DataRequired, Email, Length, NumberRange
-from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
 import bleach
-import json
 
-# Initialize extensions
-db = SQLAlchemy()
+# ==================== IMPORT PERSON 1'S MODELS ====================
+from models import db, User, Job, Report, Application, AuditLog, Blacklist, init_database
+
+# Initialize Flask-Login
 login_manager = LoginManager()
 
-# ==================== ENHANCED DATABASE MODELS ====================
-class User(db.Model):
-    __tablename__ = 'user'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(256), nullable=False)
-    role = db.Column(db.String(20), nullable=False, default='student')  # student/employer/admin
-    verified = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    company_name = db.Column(db.String(100))
-    
-    # ===== ENHANCED FIELDS (Your additions) =====
-    username = db.Column(db.String(80), unique=True)
-    full_name = db.Column(db.String(100))
-    phone = db.Column(db.String(20))
-    bio = db.Column(db.Text)
-    profile_picture = db.Column(db.String(200))
-    last_login = db.Column(db.DateTime)
-    
-    # Relationships
-    jobs = db.relationship('Job', backref='employer_user', lazy=True)
-    applications = db.relationship('Application', backref='applicant', lazy=True)  # Your addition
-    audit_logs = db.relationship('AuditLog', backref='user', lazy=True)  # Your addition
-    
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-    
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-    
-    def is_admin(self):
-        return self.role == 'admin'
-    
-    def is_employer(self):
-        return self.role == 'employer'
-    
-    def is_student(self):
-        return self.role == 'student'
-    
-    # Required by Flask-Login
-    def get_id(self):
-        return str(self.id)
-    
-    @property
-    def is_authenticated(self):
-        return True
-    
-    @property
-    def is_active(self):
-        return True
-    
-    @property
-    def is_anonymous(self):
-        return False
-
-class Job(db.Model):
-    __tablename__ = 'job'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    company = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), nullable=False)
-    apply_link = db.Column(db.String(500))
-    risk_score = db.Column(db.Integer, default=0)
-    status = db.Column(db.String(20), default='pending')
-    location = db.Column(db.String(100))
-    job_type = db.Column(db.String(20))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    employer_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    
-    # ===== ENHANCED FIELDS (Your additions) =====
-    requirements = db.Column(db.Text)
-    salary_min = db.Column(db.Integer)
-    salary_max = db.Column(db.Integer)
-    salary_currency = db.Column(db.String(10), default='USD')
-    experience_level = db.Column(db.String(50))
-    industry = db.Column(db.String(100))
-    tags = db.Column(db.String(500))
-    is_active = db.Column(db.Boolean, default=True)
-    is_featured = db.Column(db.Boolean, default=False)
-    application_deadline = db.Column(db.DateTime)
-    views_count = db.Column(db.Integer, default=0)
-    applications_count = db.Column(db.Integer, default=0)
-    
-    # Relationships
-    reports = db.relationship('Report', backref='job_report', lazy=True)
-    applications = db.relationship('Application', backref='job', lazy=True)  # Your addition
-    
-    def get_risk_badge(self):
-        if self.risk_score < 30:
-            return ('🟢 Safe', 'success')
-        elif self.risk_score < 70:
-            return ('🟡 Caution', 'warning')
-        else:
-            return ('🔴 High Risk', 'danger')
-    
-    @property
-    def salary_range(self):
-        """Your enhancement"""
-        if self.salary_min and self.salary_max:
-            return f"{self.salary_currency} {self.salary_min:,} - {self.salary_max:,}"
-        elif self.salary_min:
-            return f"{self.salary_currency} {self.salary_min:,}+"
-        return "Negotiable"
-
-class Report(db.Model):
-    __tablename__ = 'report'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    job_id = db.Column(db.Integer, db.ForeignKey('job.id'))
-    user_ip = db.Column(db.String(45), nullable=False)
-    reason = db.Column(db.String(50), nullable=False)
-    votes = db.Column(db.Integer, default=1)
-    status = db.Column(db.String(20), default='pending')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-# ===== NEW MODELS (Your additions) =====
-class Application(db.Model):
-    __tablename__ = 'application'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    job_id = db.Column(db.Integer, db.ForeignKey('job.id'), nullable=False)
-    applicant_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    cover_letter = db.Column(db.Text)
-    resume_path = db.Column(db.String(200))
-    status = db.Column(db.String(50), default='pending')  # pending, reviewed, accepted, rejected
-    applied_at = db.Column(db.DateTime, default=datetime.utcnow)
-    reviewed_at = db.Column(db.DateTime)
-    notes = db.Column(db.Text)
-    
-    # Ensure unique application per job per applicant
-    __table_args__ = (db.UniqueConstraint('job_id', 'applicant_id', name='_job_applicant_uc'),)
-
-class AuditLog(db.Model):
-    __tablename__ = 'audit_log'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    action = db.Column(db.String(100), nullable=False)
-    details = db.Column(db.Text)
-    ip_address = db.Column(db.String(45))
-    user_agent = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-# ==================== ENHANCED FORMS (Your additions) ====================
+# ==================== ENHANCED FORMS ====================
 class EnhancedJobForm(FlaskForm):
-    """Enhanced job posting form with your fields"""
+    """Enhanced job posting form with additional fields"""
     title = StringField('Job Title', validators=[DataRequired(), Length(max=200)])
     description = TextAreaField('Description', validators=[DataRequired()])
     requirements = TextAreaField('Requirements')
@@ -184,7 +40,7 @@ class EnhancedJobForm(FlaskForm):
         ('hybrid', 'Hybrid')
     ], default='full-time')
     
-    # Your enhanced fields
+    # Enhanced fields
     salary_min = IntegerField('Minimum Salary', validators=[NumberRange(min=0)])
     salary_max = IntegerField('Maximum Salary', validators=[NumberRange(min=0)])
     salary_currency = SelectField('Currency', choices=[
@@ -203,19 +59,22 @@ class EnhancedJobForm(FlaskForm):
     application_deadline = StringField('Application Deadline (YYYY-MM-DD)')
 
 class ApplicationForm(FlaskForm):
-    """Your application form"""
+    """Job application form"""
     cover_letter = TextAreaField('Cover Letter', validators=[DataRequired()])
 
 class ProfileForm(FlaskForm):
-    """Your profile form"""
+    """User profile form"""
     full_name = StringField('Full Name', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])
     phone = StringField('Phone', validators=[Length(max=20)])
     bio = TextAreaField('Bio')
+    current_password = PasswordField('Current Password (to change email/password)')
+    new_password = PasswordField('New Password')
+    confirm_password = PasswordField('Confirm New Password')
 
 # ==================== HELPER FUNCTIONS ====================
 def log_audit(action, details=None, user_id=None):
-    """Your audit logging function"""
+    """Log user actions for security audit"""
     if user_id is None and current_user.is_authenticated:
         user_id = current_user.id
     
@@ -252,60 +111,149 @@ def create_app():
     def load_user(user_id):
         return User.query.get(int(user_id))
     
-    # ==================== ENHANCED ROUTES ====================
-    
-    # Keep all Person 3's original routes (they're already good)
-    # I'll just show the NEW routes to add
+    # ==================== ROUTES ====================
     
     @app.route('/')
     def index():
-        """Enhanced home page with stats"""
+        """Home page with stats"""
         jobs = Job.query.filter_by(status='approved', is_active=True).order_by(Job.created_at.desc()).limit(6).all()
         stats = {
             'total_jobs': Job.query.filter_by(status='approved', is_active=True).count(),
             'total_companies': User.query.filter_by(role='employer', verified=True).count(),
-            'total_applications': Application.query.count() if 'application' in [table.name for table in db.metadata.tables.values()] else 0
+            'total_applications': Application.query.count()
         }
         return render_template('index.html', jobs=jobs, stats=stats)
     
-    # Keep Person 3's original login, register, logout routes
+    @app.route('/login', methods=['GET', 'POST'])
+    def login():
+        """Login page"""
+        if current_user.is_authenticated:
+            return redirect(url_for('dashboard'))
+        
+        if request.method == 'POST':
+            email = bleach.clean(request.form.get('email', ''))
+            password = request.form.get('password', '')
+            remember = bool(request.form.get('remember'))
+            
+            user = User.query.filter_by(email=email).first()
+            
+            if user and user.check_password(password):
+                if not user.verified and user.role != 'admin':
+                    flash('Account not verified. Please contact admin.', 'warning')
+                    return redirect(url_for('login'))
+                
+                login_user(user, remember=remember)
+                user.last_login = datetime.utcnow()
+                db.session.commit()
+                
+                log_audit('login', {'email': email})
+                flash('Login successful!', 'success')
+                return redirect(url_for('dashboard'))
+            else:
+                log_audit('failed_login', {'email': email})
+                flash('Invalid email or password', 'danger')
+        
+        return render_template('login.html')
+    
+    @app.route('/register', methods=['GET', 'POST'])
+    def register():
+        """Registration page"""
+        if current_user.is_authenticated:
+            return redirect(url_for('dashboard'))
+        
+        if request.method == 'POST':
+            email = bleach.clean(request.form.get('email', '').lower())
+            password = request.form.get('password', '')
+            role = request.form.get('role', 'student')
+            company_name = bleach.clean(request.form.get('company_name', '')) if role == 'employer' else None
+            full_name = bleach.clean(request.form.get('full_name', ''))
+            
+            # Check if user exists
+            if User.query.filter_by(email=email).first():
+                flash('Email already registered', 'danger')
+                return redirect(url_for('register'))
+            
+            # Create user
+            user = User(
+                email=email, 
+                role=role, 
+                company_name=company_name,
+                full_name=full_name
+            )
+            user.set_password(password)
+            
+            # Auto-create admin for demo
+            if email in ['admin@jobportal.com', 'superadmin@jobportal.com']:
+                user.role = 'admin'
+                user.verified = True
+            
+            db.session.add(user)
+            db.session.commit()
+            
+            log_audit('registration', {'email': email, 'role': role})
+            flash('Registration successful! Please login.', 'success')
+            return redirect(url_for('login'))
+        
+        return render_template('register.html')
+    
+    @app.route('/logout')
+    @login_required
+    def logout():
+        """Logout user"""
+        log_audit('logout')
+        logout_user()
+        flash('You have been logged out', 'info')
+        return redirect(url_for('index'))
     
     @app.route('/dashboard')
     @login_required
     def dashboard():
-        """Enhanced dashboard based on role"""
+        """User dashboard based on role"""
         if current_user.is_admin():
-            # Enhanced admin dashboard
+            # Admin dashboard
             stats = {
                 'total_users': User.query.count(),
                 'total_jobs': Job.query.count(),
-                'total_applications': Application.query.count() if 'application' in [table.name for table in db.metadata.tables.values()] else 0,
-                'pending_jobs': Job.query.filter_by(status='pending').count()
+                'total_applications': Application.query.count(),
+                'pending_jobs': Job.query.filter_by(status='pending').count(),
+                'pending_reports': Report.query.filter_by(status='pending').count()
             }
-            return render_template('admin.html', stats=stats)
+            recent_logs = AuditLog.query.order_by(AuditLog.created_at.desc()).limit(10).all()
+            return render_template('admin.html', stats=stats, recent_logs=recent_logs)
         
         elif current_user.is_employer():
-            # Enhanced employer dashboard
+            # Employer dashboard
             jobs = Job.query.filter_by(employer_id=current_user.id).all()
             total_applications = Application.query.filter(
                 Application.job_id.in_([job.id for job in jobs])
-            ).count() if 'application' in [table.name for table in db.metadata.tables.values()] else 0
+            ).count()
             return render_template('dashboard.html', jobs=jobs, total_applications=total_applications)
         
         else:
-            # Enhanced student/applicant dashboard
-            applications = Application.query.filter_by(applicant_id=current_user.id).all() if 'application' in [table.name for table in db.metadata.tables.values()] else []
+            # Student/Applicant dashboard
+            applications = Application.query.filter_by(applicant_id=current_user.id).all()
             return render_template('dashboard.html', applications=applications)
-    
-    # ===== NEW ROUTES (Your additions) =====
     
     @app.route('/profile', methods=['GET', 'POST'])
     @login_required
     def profile():
-        """Your profile page"""
+        """User profile page"""
         form = ProfileForm(obj=current_user)
         
         if form.validate_on_submit():
+            # Check if changing password
+            if form.current_password.data:
+                if not current_user.check_password(form.current_password.data):
+                    flash('Current password is incorrect', 'danger')
+                    return redirect(url_for('profile'))
+                
+                if form.new_password.data != form.confirm_password.data:
+                    flash('New passwords do not match', 'danger')
+                    return redirect(url_for('profile'))
+                
+                current_user.set_password(form.new_password.data)
+            
+            # Update profile
             current_user.full_name = form.full_name.data
             current_user.email = form.email.data
             current_user.phone = form.phone.data
@@ -321,7 +269,7 @@ def create_app():
     @app.route('/jobs')
     @login_required
     def jobs():
-        """Enhanced job listings with filtering"""
+        """Job listings with filtering"""
         page = request.args.get('page', 1, type=int)
         per_page = 10
         
@@ -343,10 +291,30 @@ def create_app():
         
         return render_template('jobs.html', jobs=jobs)
     
+    @app.route('/job/<int:job_id>')
+    @login_required
+    def job_detail(job_id):
+        """Job details page"""
+        job = Job.query.get_or_404(job_id)
+        
+        # Increment view count
+        job.views_count += 1
+        db.session.commit()
+        
+        # Check if user has already applied
+        has_applied = False
+        if current_user.is_authenticated and current_user.is_student():
+            has_applied = Application.query.filter_by(
+                job_id=job_id,
+                applicant_id=current_user.id
+            ).first() is not None
+        
+        return render_template('job_detail.html', job=job, has_applied=has_applied)
+    
     @app.route('/job/<int:job_id>/apply', methods=['GET', 'POST'])
     @login_required
     def apply_job(job_id):
-        """Your job application route"""
+        """Apply for a job"""
         if not current_user.is_student():
             flash('Only students can apply for jobs', 'danger')
             return redirect(url_for('job_detail', job_id=job_id))
@@ -357,7 +325,7 @@ def create_app():
         existing_application = Application.query.filter_by(
             job_id=job_id,
             applicant_id=current_user.id
-        ).first() if 'application' in [table.name for table in db.metadata.tables.values()] else None
+        ).first()
         
         if existing_application:
             flash('You have already applied for this job', 'warning')
@@ -386,16 +354,20 @@ def create_app():
             db.session.add(application)
             db.session.commit()
             
+            # Update job applications count
+            job.applications_count += 1
+            db.session.commit()
+            
             log_audit('job_application', {'job_id': job_id, 'job_title': job.title})
             flash('Application submitted successfully!', 'success')
             return redirect(url_for('job_detail', job_id=job_id))
         
         return render_template('apply.html', job=job, form=form)
     
-    @app.route('/post-job-enhanced', methods=['GET', 'POST'])
+    @app.route('/post-job', methods=['GET', 'POST'])
     @login_required
-    def post_job_enhanced():
-        """Enhanced job posting with your fields"""
+    def post_job():
+        """Post a new job (enhanced version)"""
         if not current_user.is_employer():
             flash('Only employers can post jobs', 'danger')
             return redirect(url_for('dashboard'))
@@ -410,7 +382,7 @@ def create_app():
             apply_link = bleach.clean(form.apply_link.data) if form.apply_link.data else ''
             location = bleach.clean(form.location.data) if form.location.data else ''
             
-            # Risk scoring (Person 3's logic)
+            # Risk scoring
             risk_score = 0
             if 'bit.ly' in apply_link or 'tinyurl' in apply_link:
                 risk_score += 30
@@ -423,7 +395,7 @@ def create_app():
             if not email.endswith(('.com', '.org', '.edu', '.net')):
                 risk_score += 30
             
-            # Create job with enhanced fields
+            # Create job
             job = Job(
                 title=title,
                 description=description,
@@ -437,7 +409,7 @@ def create_app():
                 job_type=form.job_type.data,
                 employer_id=current_user.id,
                 
-                # Your enhanced fields
+                # Enhanced fields
                 salary_min=form.salary_min.data,
                 salary_max=form.salary_max.data,
                 salary_currency=form.salary_currency.data,
@@ -452,7 +424,7 @@ def create_app():
                     job.application_deadline = datetime.strptime(form.application_deadline.data, '%Y-%m-%d')
                 except ValueError:
                     flash('Invalid date format. Use YYYY-MM-DD', 'danger')
-                    return render_template('post_job.html', form=form)
+                    return render_template('post_job.html', form=form, enhanced=True)
             
             db.session.add(job)
             db.session.commit()
@@ -470,28 +442,66 @@ def create_app():
         
         return render_template('post_job.html', form=form, enhanced=True)
     
-    @app.route('/reports')
+    @app.route('/report/<int:job_id>', methods=['POST'])
     @login_required
-    def reports():
-        """Your reports page"""
+    def report_job(job_id):
+        """Report a suspicious job"""
+        if not current_user.is_student():
+            return jsonify({'error': 'Only students can report jobs'}), 403
+        
+        reason = bleach.clean(request.form.get('reason', ''))
+        
+        if not reason:
+            return jsonify({'error': 'Reason is required'}), 400
+        
+        report = Report(
+            job_id=job_id,
+            user_id=current_user.id,
+            reason=reason,
+            user_ip=request.remote_addr
+        )
+        
+        db.session.add(report)
+        
+        # Auto-flag if 3+ reports
+        report_count = Report.query.filter_by(job_id=job_id).count()
+        if report_count >= 3:
+            job = Job.query.get(job_id)
+            if job:
+                job.status = 'flagged'
+        
+        db.session.commit()
+        
+        log_audit('job_reported', {'job_id': job_id, 'reason': reason})
+        return jsonify({'message': 'Report submitted'})
+    
+    @app.route('/admin')
+    @login_required
+    def admin_dashboard():
+        """Admin dashboard"""
         if not current_user.is_admin():
             flash('Admin access required', 'danger')
             return redirect(url_for('dashboard'))
         
-        # Generate report data
-        report_data = {
-            'user_growth': get_user_growth_report(),
-            'job_statistics': get_job_statistics(),
-            'application_metrics': get_application_metrics()
-        }
+        flagged_jobs = Job.query.filter_by(status='flagged').all()
+        pending_jobs = Job.query.filter_by(status='pending').all()
+        reports = Report.query.all()
         
-        return render_template('reports.html', report_data=report_data)
+        return render_template('admin.html', 
+                             flagged_jobs=flagged_jobs,
+                             pending_jobs=pending_jobs,
+                             reports=reports)
     
-    # ===== HELPER FUNCTIONS FOR REPORTS =====
-    
-    def get_user_growth_report():
-        from datetime import timedelta
-        days = 30
-        data = []
-        for i in range(days, -1, -1):
-            date = (datetime.utcnow() - timedelta(days=i)).strftime('%Y-%m-%d')
+    @app.route('/admin/job/<int:job_id>/<action>')
+    @login_required
+    def admin_job_action(job_id, action):
+        """Admin job moderation"""
+        if not current_user.is_admin():
+            flash('Admin access required', 'danger')
+            return redirect(url_for('dashboard'))
+        
+        job = Job.query.get_or_404(job_id)
+        
+        if action == 'approve':
+            job.status = 'approved'
+            flash(f'Job "{job.title}" ap
