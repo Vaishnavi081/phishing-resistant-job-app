@@ -1,35 +1,128 @@
-# Person 3 - Frontend & Deployment gitignore
-# Hackathon MVP - Minimal version
-
 # Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
 venv/
+ENV/
+env.bak/
+venv.bak/
+pythonenv*
 
-# Virtual Environment
-venv/
-.venv/
+# Flask
+instance/
+.webassets-cache
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
 
 # Environment variables
 .env
-
-# Database (SQLite)
-*.db
-app.db
-
-# Uploads (user files)
-uploads/
-!uploads/.gitkeep
-
-# OS files
-.DS_Store
-Thumbs.db
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.secrets
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
-# Logs (if any)
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
 *.log
+logs/
+
+# Testing
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# Virtual environment
+venv/
+venv*/
+
+# Local development files
+local_settings.py
+.devcontainer/
+
+# Temporary files
+temp/
+tmp/
