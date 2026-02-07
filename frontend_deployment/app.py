@@ -504,4 +504,153 @@ def create_app():
         
         if action == 'approve':
             job.status = 'approved'
-            flash(f'Job "{job.title}" ap
+            flash(f'Job "{job.title}" approved', 'success')
+        elif action == 'reject':
+            job.status = 'rejected'
+            flash(f'Job "{job.title}" rejected', 'warning')
+        elif action == 'delete':
+            # Delete related applications and reports
+            Application.query.filter_by(job_id=job_id).delete()
+            Report.query.filter_by(job_id=job_id).delete()
+            db.session.delete(job)
+            flash(f'Job "{job.title}" deleted', 'danger')
+        
+        db.session.commit()
+        log_audit('admin_job_action', {'job_id': job_id, 'action': action})
+        return redirect(url_for('admin_dashboard'))
+    
+    @app.route('/reports')
+    @login_required
+    def reports():
+        """System reports (admin only)"""
+        if not current_user.is_admin():
+            flash('Admin access required', 'danger')
+            return redirect(url_for('dashboard'))
+        
+        # Generate report data
+        report_data = {
+            'user_growth': get_user_growth_report(),
+            'job_statistics': get_job_statistics(),
+            'application_metrics': get_application_metrics()
+        }
+        
+        return render_template('reports.html', report_data=report_data)
+    
+    @app.route('/calculate-risk', methods=['POST'])
+    @login_required
+    def calculate_risk():
+        """Calculate risk score for job posting preview"""
+        if not current_user.is_employer():
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        data = request.get_json()
+        url = data.get('url', '')
+        description = data.get('description', '')
+        
+        # Risk calculation
+        risk_score = 0
+        
+        if not url.startswith(('http://', 'https://')):
+            risk_score += 20
+        
+        if any(short in url for short in ['bit.ly', 'tinyurl', 'ow.ly']):
+            risk_score += 30
+        
+        suspicious_keywords = ['urgent', 'crypto', 'bitcoin', 'paypal', 'western union']
+        for keyword in suspicious_keywords:
+            if keyword in (url + description).lower():
+                risk_score += 15
+        
+        risk_score = min(risk_score, 100)
+        
+        if risk_score < 30:
+            badge, color = '🟢 Safe', 'success'
+        elif risk_score < 70:
+            badge, color = '🟡 Caution', 'warning'
+        else:
+            badge, color = '🔴 High Risk', 'danger'
+        
+        return jsonify({
+            'score': risk_score,
+            'badge': badge,
+            'color': color
+        })
+    
+    @app.route('/health')
+    def health():
+        """Health check endpoint"""
+        return jsonify({'status': 'healthy'}), 200
+    
+    # ==================== REPORT HELPER FUNCTIONS ====================
+    
+    def get_user_growth_report():
+        """Generate user growth report"""
+        from datetime import timedelta
+        days = 30
+        data = []
+        for i in range(days, -1, -1):
+            date = (datetime.utcnow() - timedelta(days=i)).strftime('%Y-%m-%d')
+            count = User.query.filter(
+                db.func.date(User.created_at) == date
+            ).count()
+            data.append({'date': date, 'count': count})
+        return data
+    
+    def get_job_statistics():
+        """Generate job statistics"""
+        stats = {
+            'total_jobs': Job.query.count(),
+            'active_jobs': Job.query.filter_by(is_active=True).count(),
+            'by_type': db.session.query(Job.job_type, db.func.count(Job.id)).group_by(Job.job_type).all(),
+            'by_experience': db.session.query(Job.experience_level, db.func.count(Job.id)).group_by(Job.experience_level).all()
+        }
+        return stats
+    
+    def get_application_metrics():
+        """Generate application metrics"""
+        metrics = {
+            'total_applications': Application.query.count(),
+            'by_status': db.session.query(Application.status, db.func.count(Application.id)).group_by(Application.status).all(),
+            'avg_applications_per_job': db.session.query(db.func.avg(db.func.count(Application.id))).group_by(Application.job_id).scalar() or 0
+        }
+        return metrics
+    
+    # ==================== ERROR HANDLERS ====================
+    
+    @app.errorhandler(404)
+    def not_found(error):
+        return render_template('404.html'), 404
+    
+    @app.errorhandler(500)
+    def internal_error(error):
+        db.session.rollback()
+        return render_template('500.html'), 500
+    
+    @app.errorhandler(413)
+    def too_large_error(error):
+        return render_template('413.html'), 413
+    
+    # ==================== CONTEXT PROCESSORS ====================
+    
+    @app.context_processor
+    def inject_user():
+        return dict(current_user=current_user)
+    
+    @app.context_processor
+    def inject_now():
+        return {'now': datetime.utcnow()}
+    
+    return app
+
+# ==================== MAIN EXECUTION ====================
+if __name__ == '__main__':
+    app = create_app()
+    
+    with app.app_context():
+        # Initialize database using Person 1's function
+        init_database()
+        print("✓ Database initialized successfully")
+    
+    print("✓ Starting Flask application...")
+    print("✓ Open http://localhost:5001 in your browser")
+    app.run(host='0.0.0.0', port=5001, debug=True)
