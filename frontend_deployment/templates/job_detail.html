@@ -7,12 +7,18 @@
     <div class="card my-4">
         <div class="card-header">
             <h3>{{ job.title }}</h3>
-            {% if job.risk_score < 30 %}
-                <span class="badge bg-success">🟢 Safe</span>
-            {% elif job.risk_score < 70 %}
-                <span class="badge bg-warning">🟡 Caution</span>
+            <!-- Risk badge for students and admins, not employers -->
+            {% if current_user.is_student() or current_user.is_admin() %}
+                {% if job.risk_score < 30 %}
+                    <span class="badge bg-success">🟢 Safe</span>
+                {% elif job.risk_score < 70 %}
+                    <span class="badge bg-warning">🟡 Caution</span>
+                {% else %}
+                    <span class="badge bg-danger">🔴 High Risk</span>
+                {% endif %}
             {% else %}
-                <span class="badge bg-danger">🔴 High Risk</span>
+                <!-- Status badge for employers -->
+                <span class="badge bg-secondary">{{ job.status|title }}</span>
             {% endif %}
         </div>
         
@@ -30,6 +36,8 @@
             
             <hr>
             
+            <!-- Risk Analysis for students and admins, not employers -->
+            {% if current_user.is_student() or current_user.is_admin() %}
             <div class="risk-section mb-4">
                 <h5>Risk Analysis</h5>
                 <p><strong>Risk Score:</strong> <span id="riskScore">{{ job.risk_score }}</span>/100</p>
@@ -48,8 +56,8 @@
                     {% endif %}
                 </div>
             </div>
-            
             <hr>
+            {% endif %}
             
             <div class="description-box mb-4">
                 <h5>Job Description</h5>
@@ -81,8 +89,9 @@
     </div>
 </div>
 
+<!-- Script for students and admins -->
+{% if current_user.is_student() or current_user.is_admin() %}
 <script>
-// Set progress bar width using JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     const riskScore = document.getElementById('riskScore').textContent;
     const riskBar = document.getElementById('riskBar');
@@ -105,6 +114,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+{% endif %}
 
 <style>
 .progress {

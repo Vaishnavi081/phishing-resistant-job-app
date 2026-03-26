@@ -3,114 +3,197 @@
 {% block title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">Admin Dashboard</h2>
-
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card text-white bg-primary">
-            <div class="card-body">
-                <h5 class="card-title">Flagged Jobs</h5>
-                <p class="card-text display-6">{{ flagged_jobs|length }}</p>
-            </div>
-        </div>
-    </div>
+<div class="container-fluid">
+    <h2 class="mb-4">Admin Dashboard</h2>
     
-    <div class="col-md-3">
-        <div class="card text-white bg-warning">
-            <div class="card-body">
-                <h5 class="card-title">Pending Review</h5>
-                <p class="card-text display-6">{{ pending_jobs|length }}</p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-white bg-info">
-            <div class="card-body">
-                <h5 class="card-title">Total Reports</h5>
-                <p class="card-text display-6">{{ reports|length }}</p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-white bg-success">
-            <div class="card-body">
-                <h5 class="card-title">Actions</h5>
-                <p class="card-text">Manage content</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-lg-6">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Flagged Jobs</h5>
-            </div>
-            <div class="card-body">
-                {% for job in flagged_jobs %}
-                    <div class="border-bottom pb-3 mb-3">
-                        <div class="d-flex justify-content-between">
-                            <h6>{{ job.title }}</h6>
-                            <span class="badge bg-danger">Score: {{ job.risk_score }}</span>
-                        </div>
-                        <p class="small text-muted mb-2">{{ job.company }} • {{ job.email }}</p>
-                        <div class="btn-group btn-group-sm">
-                            <a href="/admin/job/{{ job.id }}/approve" class="btn btn-success">Approve</a>
-                            <a href="/admin/job/{{ job.id }}/reject" class="btn btn-warning">Reject</a>
-                            <a href="/admin/job/{{ job.id }}/delete" class="btn btn-danger">Delete</a>
-                        </div>
-                    </div>
-                {% else %}
-                    <p class="text-muted mb-0">No flagged jobs</p>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-6">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Pending Jobs</h5>
-            </div>
-            <div class="card-body">
-                {% for job in pending_jobs %}
-                    <div class="border-bottom pb-3 mb-3">
-                        <div class="d-flex justify-content-between">
-                            <h6>{{ job.title }}</h6>
-                            <span class="badge bg-warning">Pending</span>
-                        </div>
-                        <p class="small text-muted mb-2">Risk: {{ job.risk_score }}</p>
-                        <div class="btn-group btn-group-sm">
-                            <a href="/admin/job/{{ job.id }}/approve" class="btn btn-success">Approve</a>
-                            <a href="/admin/job/{{ job.id }}/reject" class="btn btn-danger">Reject</a>
-                        </div>
-                    </div>
-                {% else %}
-                    <p class="text-muted mb-0">No pending jobs</p>
-                {% endfor %}
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h6 class="card-title">Total Users</h6>
+                    <p class="card-text display-6">{{ stats.total_users }}</p>
+                </div>
             </div>
         </div>
         
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Recent Reports</h5>
+        <div class="col-md-2">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h6 class="card-title">Total Jobs</h6>
+                    <p class="card-text display-6">{{ stats.total_jobs }}</p>
+                </div>
             </div>
-            <div class="card-body">
-                {% for report in reports[-5:] %}
-                    <div class="border-bottom pb-2 mb-2">
-                        <p class="small mb-1">
-                            <strong>Job ID {{ report.job_id }}</strong> • 
-                            {{ report.reason }} • 
-                            <span class="text-muted">{{ report.created_at.strftime('%H:%M') }}</span>
-                        </p>
-                    </div>
-                {% else %}
-                    <p class="text-muted mb-0">No reports</p>
-                {% endfor %}
+        </div>
+        
+        <div class="col-md-2">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h6 class="card-title">Applications</h6>
+                    <p class="card-text display-6">{{ stats.total_applications }}</p>
+                </div>
             </div>
+        </div>
+        
+        <div class="col-md-2">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h6 class="card-title">Pending Jobs</h6>
+                    <p class="card-text display-6">{{ stats.pending_jobs }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-2">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h6 class="card-title">Pending Reports</h6>
+                    <p class="card-text display-6">{{ stats.pending_reports }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-2">
+            <div class="card text-white bg-secondary">
+                <div class="card-body">
+                    <h6 class="card-title">Pending Employers</h6>
+                    <p class="card-text display-6">{{ stats.pending_employers }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pending Employer Verifications -->
+    {% if pending_employers %}
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-person-check"></i> Pending Employer Verifications
+                <span class="badge bg-danger">{{ pending_employers|length }}</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Company</th>
+                            <th>Email</th>
+                            <th>Registered</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for employer in pending_employers %}
+                        <tr>
+                            <td>{{ employer.company_name }}</td>
+                            <td>{{ employer.email }}</td>
+                            <td>{{ employer.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <a href="{{ url_for('verify_employer', user_id=employer.id) }}" 
+                                   class="btn btn-sm btn-success" 
+                                   onclick="return confirm('Verify {{ employer.company_name }}?')">
+                                    <i class="bi bi-check-lg"></i> Verify
+                                </a>
+                                <a href="{{ url_for('reject_employer', user_id=employer.id) }}" 
+                                   class="btn btn-sm btn-danger" 
+                                   onclick="return confirm('Reject {{ employer.company_name }}?')">
+                                    <i class="bi bi-x-lg"></i> Reject
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Recent Reports -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-flag"></i> Recent Reports
+                <span class="badge bg-info">{{ report_list|length }}</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if report_list %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Job ID</th>
+                                <th>Reason</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in report_list[:5] %}
+                            <tr>
+                                <td>{{ report.id }}</td>
+                                <td>Job #{{ report.job_id }}</td>
+                                <td>{{ report.reason[:50] }}{% if report.reason|length > 50 %}...{% endif %}</td>
+                                <td>{{ report.created_at.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'warning' if report.status == 'pending' else 'success' if report.status == 'resolved' else 'secondary' }}">
+                                        {{ report.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No reports found.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Recent Activity Logs -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-activity"></i> Recent Activity Logs
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if recent_logs %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>User ID</th>
+                                <th>Action</th>
+                                <th>IP Address</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in recent_logs %}
+                            <tr>
+                                <td>{{ log.created_at.strftime('%H:%M') }}</td>
+                                <td>
+                                    {% if log.user_id %}
+                                        User #{{ log.user_id }}
+                                    {% else %}
+                                        System
+                                    {% endif %}
+                                </td>
+                                <td>{{ log.action }}</td>
+                                <td><small class="text-muted">{{ log.ip_address }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No recent activity logs</p>
+            {% endif %}
         </div>
     </div>
 </div>

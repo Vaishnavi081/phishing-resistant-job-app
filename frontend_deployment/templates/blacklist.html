@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block title %}Blacklist Management - Admin{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Page Header -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="h2 mb-2">
+                            <i class="fas fa-ban text-dark"></i>
+                            Blacklist Management
+                        </h1>
+                        <p class="text-muted mb-0">
+                            Manage blocked domains and keywords to prevent phishing attempts
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addBlacklistModal">
+                            <i class="fas fa-plus"></i> Add to Blacklist
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Blacklisted Domains -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-globe text-danger"></i>
+                    Blacklisted Domains
+                </h4>
+                <span class="badge bg-danger">{{ domains|length }} domains</span>
+            </div>
+            <div class="card-body">
+                {% if domains %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Domain</th>
+                                <th>Type</th>
+                                <th>Reason</th>
+                                <th>Added By</th>
+                                <th>Date Added</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for domain in domains %}
+                            <tr>
+                                <td>
+                                    <code>{{ domain.blacklisted_item }}</code>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ domain.item_type|title }}</span>
+                                </td>
+                                <td>
+                                    <small>{{ domain.reason }}</small>
+                                </td>
+                                <td>
+                                    {% if domain.added_by_user %}
+                                        {{ domain.added_by_user.email }}
+                                    {% else %}
+                                        <span class="text-muted">System</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ domain.created_at.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-danger" 
+                                            onclick="confirmRemove('{{ domain.blacklisted_item }}', '{{ domain.item_type }}', {{ domain.id }})">
+                                        <i class="fas fa-trash"></i> Remove
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-globe fa-3x text-muted mb-3"></i>
+                    <h5>No Domains Blacklisted</h5>
+                    <p class="text-muted">Add domains to block phishing attempts</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Blacklisted Keywords -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-key text-warning"></i>
+                    Blacklisted Keywords
+                </h4>
+                <span class="badge bg-warning">{{ keywords|length }} keywords</span>
+            </div>
+            <div class="card-body">
+                {% if keywords %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Keyword</th>
+                                <th>Type</th>
+                                <th>Reason</th>
+                                <th>Added By</th>
+                                <th>Date Added</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for keyword in keywords %}
+                            <tr>
+                                <td>
+                                    <code>"{{ keyword.blacklisted_item }}"</code>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ keyword.item_type|title }}</span>
+                                </td>
+                                <td>
+                                    <small>{{ keyword.reason }}</small>
+                                </td>
+                                <td>
+                                    {% if keyword.added_by_user %}
+                                        {{ keyword.added_by_user.email }}
+                                    {% else %}
+                                        <span class="text-muted">System</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ keyword.created_at.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-danger" 
+                                            onclick="confirmRemove('{{ keyword.blacklisted_item }}', '{{ keyword.item_type }}', {{ keyword.id }})">
+                                        <i class="fas fa-trash"></i> Remove
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-key fa-3x text-muted mb-3"></i>
+                    <h5>No Keywords Blacklisted</h5>
+                    <p class="text-muted">Add keywords to flag suspicious content</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Blacklist Guidelines -->
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-info-circle text-primary"></i>
+                    Blacklist Guidelines
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="alert alert-danger">
+                            <h6><i class="fas fa-ban"></i> What to Blacklist</h6>
+                            <ul class="mb-0 small">
+                                <li>Known phishing domains</li>
+                                <li>URL shortener services</li>
+                                <li>Free email domains used for scams</li>
+                                <li>Common scam keywords</li>
+                                <li>Suspicious company names</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-lightbulb"></i> Best Practices</h6>
+                            <ul class="mb-0 small">
+                                <li>Add entire domains (not just emails)</li>
+                                <li>Include common scam phrases</li>
+                                <li>Review blacklist regularly</li>
+                                <li>Document reasons for blacklisting</li>
+                                <li>Monitor blacklist effectiveness</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Example Entries -->
+                <div class="alert alert-light">
+                    <h6><i class="fas fa-list"></i> Common Blacklist Entries</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Domains:</strong>
+                            <ul class="mb-0 small">
+                                <li><code>bit.ly</code> - URL shortener</li>
+                                <li><code>scamjobs.com</code> - Known scam site</li>
+                                <li><code>fake-careers.com</code> - Fraudulent</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Keywords:</strong>
+                            <ul class="mb-0 small">
+                                <li><code>western union</code> - Money transfer scam</li>
+                                <li><code>crypto investment</code> - Crypto scam</li>
+                                <li><code>urgent hiring</code> - Urgency tactic</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Blacklist Modal -->
+<div class="modal fade" id="addBlacklistModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-ban"></i>
+                    Add to Blacklist
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('blacklist_management') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="item" class="form-label">Item to Blacklist *</label>
+                        <input type="text" class="form-control" id="item" name="item" 
+                               placeholder="e.g., scamdomain.com or 'quick money'" required>
+                        <div class="form-text">
+                            Enter a domain (scamdomain.com) or keyword ('urgent hiring')
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="type" class="form-label">Type *</label>
+                        <select class="form-select" id="type" name="type" required>
+                            <option value="domain">Domain</option>
+                            <option value="keyword">Keyword</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Reason *</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="3" 
+                                  placeholder="Why is this being blacklisted?" required></textarea>
+                        <div class="form-text">Be specific for audit purposes</div>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Warning:</strong> Blacklisted items will be blocked from job postings.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-ban"></i> Add to Blacklist
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmRemove(item, type, id) {
+    if (confirm(`Remove ${type} "${item}" from blacklist?`)) {
+        // In a real application, you would make an AJAX call or redirect to a remove endpoint
+        alert(`Removing ${item}...\n\nNote: In a production system, this would make an API call to remove the item.`);
+        // Example: window.location.href = `/admin/blacklist/remove/${id}`;
+    }
+}
+</script>
+{% endblock %}

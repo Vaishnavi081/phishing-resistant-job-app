@@ -58,11 +58,12 @@
                             <input type="url" class="form-control" name="apply_link" 
                                    id="applyLink" required>
                             <div class="mt-2">
-                                <small>Risk Score: <span id="riskScore">0</span>/100</small>
-                                <div class="progress" style="height: 8px;">
+                                <div class="progress" style="height: 8px; display: none;" id="riskProgress">
                                     <div class="progress-bar" id="riskBar" style="width: 0%"></div>
                                 </div>
-                                <small id="riskMessage" class="text-muted">Enter URL to see risk score</small>
+                                <small id="securityMessage" class="text-muted">
+                                    <i class="bi bi-shield-check"></i> URL security will be checked upon submission
+                                </small>
                             </div>
                         </div>
                         
@@ -72,12 +73,13 @@
                         </div>
                     </div>
                     
-                    <div class="alert alert-warning" id="riskWarning" style="display: none;">
-                        <strong>Warning:</strong> High risk detected. This job may be rejected.
+                    <div class="alert alert-warning" id="genericWarning" style="display: none;">
+                        <strong><i class="bi bi-exclamation-triangle"></i> Security Notice:</strong> 
+                        Please ensure your application link uses a legitimate company domain.
                     </div>
                     
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">Post Job</button>
+                        <button type="submit" class="btn btn-primary">Submit Job for Review</button>
                     </div>
                 </form>
             </div>
@@ -87,53 +89,42 @@
 
 <script>
 const applyLink = document.getElementById('applyLink');
-const riskScore = document.getElementById('riskScore');
-const riskBar = document.getElementById('riskBar');
-const riskMessage = document.getElementById('riskMessage');
-const riskWarning = document.getElementById('riskWarning');
+const genericWarning = document.getElementById('genericWarning');
 
-function calculateRisk() {
-    const url = applyLink.value;
+function checkURLPatterns() {
+    const url = applyLink.value.toLowerCase().trim();
     
     if (!url) {
-        riskScore.textContent = '0';
-        riskBar.style.width = '0%';
-        riskMessage.textContent = 'Enter URL to see risk score';
-        riskWarning.style.display = 'none';
+        genericWarning.style.display = 'none';
         return;
     }
     
-    fetch('/calculate-risk', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({url: url, description: ''})
-    })
-    .then(response => response.json())
-    .then(data => {
-        riskScore.textContent = data.score;
-        riskBar.style.width = data.score + '%';
-        riskBar.className = `progress-bar bg-${data.color}`;
-        riskMessage.textContent = data.badge;
-        
-        if (data.score > 70) {
-            riskWarning.style.display = 'block';
-        } else {
-            riskWarning.style.display = 'none';
+    // Generic patterns that might trigger security review (without revealing scores)
+    const genericPatterns = [
+        'bit.ly', 'tinyurl', 'ow.ly', 'shorturl', 'cutt.ly',
+        '.tk', '.ml', '.ga', '.cf', '.gq', '.xyz'
+    ];
+    
+    let hasGenericPattern = false;
+    for (const pattern of genericPatterns) {
+        if (url.includes(pattern)) {
+            hasGenericPattern = true;
+            break;
         }
-    })
-    .catch(() => {
-        riskScore.textContent = 'Error';
-        riskMessage.textContent = 'Could not calculate risk';
-    });
+    }
+    
+    if (hasGenericPattern) {
+        genericWarning.style.display = 'block';
+    } else {
+        genericWarning.style.display = 'none';
+    }
 }
 
-// Calculate risk when URL changes
-applyLink.addEventListener('blur', calculateRisk);
+// Check URL patterns when input changes
+applyLink.addEventListener('blur', checkURLPatterns);
 applyLink.addEventListener('input', function() {
     clearTimeout(this.timer);
-    this.timer = setTimeout(calculateRisk, 500);
+    this.timer = setTimeout(checkURLPatterns, 500);
 });
 </script>
 {% endblock %}

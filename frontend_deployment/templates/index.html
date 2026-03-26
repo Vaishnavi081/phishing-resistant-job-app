@@ -3,65 +3,44 @@
 {% block title %}Home - Secure Job Portal{% endblock %}
 
 {% block content %}
-<div class="text-center py-5">
-    <h1 class="display-4 fw-bold mb-4">
-        Find Real Jobs.<br>
-        <span class="text-primary">Avoid Fake Postings.</span>
-    </h1>
-    
-    <p class="lead mb-4">
-        Phishing-resistant job portal with domain verification,<br>
-        link scanning, and collaborative reporting.
-    </p>
-    
+<div class="hero-section text-center py-5 mb-5 bg-light rounded">
+    <h1 class="display-4 mb-3">Secure Job Portal</h1>
+    <p class="lead mb-4">Phishing-resistant job platform with automated security screening</p>
     {% if not current_user.is_authenticated %}
-        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
-            <a href="/register" class="btn btn-primary btn-lg px-4 me-md-2">
-                Get Started
-            </a>
-            <a href="/login" class="btn btn-outline-secondary btn-lg px-4">
-                Login
-            </a>
-        </div>
-    {% else %}
-        <a href="/dashboard" class="btn btn-primary btn-lg px-4">
-            Go to Dashboard
-        </a>
+        <a href="/register" class="btn btn-primary btn-lg me-2">Get Started</a>
+        <a href="/login" class="btn btn-outline-primary btn-lg">Login</a>
     {% endif %}
 </div>
 
-<div class="row mt-5">
+<div class="row mb-5">
     <div class="col-md-4 mb-4">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <h5 class="card-title">Domain Verification</h5>
-                <p class="card-text">
-                    Every employer email is verified with DNS MX records
-                </p>
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="bi bi-shield-check display-4 text-primary mb-3"></i>
+                <h5>Risk Assessment</h5>
+                <p>Every job listing is automatically screened for phishing indicators and security risks.</p>
             </div>
         </div>
     </div>
-    
     <div class="col-md-4 mb-4">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <h5 class="card-title">Risk Scoring</h5>
-                <p class="card-text">
-                    Links scanned for phishing indicators in real-time
-                </p>
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="bi bi-flag display-4 text-danger mb-3"></i>
+                <h5>Report Suspicious Listings</h5>
+                <p>Students can report questionable job postings for immediate admin review.</p>
             </div>
         </div>
     </div>
-    
     <div class="col-md-4 mb-4">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <h5 class="card-title">Collaborative Reporting</h5>
-                <p class="card-text">
-                    Students report suspicious jobs, auto-flag at 3+ reports
-                </p>
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="bi bi-person-check display-4 text-success mb-3"></i>
+                <h5>Verified Employers</h5>
+                <p>All employer accounts undergo verification before they can post jobs.</p>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Only show feature cards, no statistics or job listings -->
 {% endblock %}

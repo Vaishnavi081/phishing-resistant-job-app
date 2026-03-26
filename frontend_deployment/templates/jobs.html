@@ -1,138 +1,99 @@
 {% extends "base.html" %}
 
-{% block title %}Post Job{% endblock %}
+{% block title %}Job Listings{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="mb-0">Post a Job</h4>
+<h2 class="mb-4">Job Listings</h2>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Job Type</label>
+                <select name="type" class="form-select">
+                    <option value="">All Types</option>
+                    <option value="full-time" {% if request.args.get('type') == 'full-time' %}selected{% endif %}>Full Time</option>
+                    <option value="part-time" {% if request.args.get('type') == 'part-time' %}selected{% endif %}>Part Time</option>
+                    <option value="contract" {% if request.args.get('type') == 'contract' %}selected{% endif %}>Contract</option>
+                    <option value="remote" {% if request.args.get('type') == 'remote' %}selected{% endif %}>Remote</option>
+                </select>
             </div>
-            <div class="card-body">
-                <div class="alert alert-info mb-4">
-                    <small>
-                        <strong>Note:</strong> Jobs are automatically screened for phishing risks.
-                        High-risk jobs (>70 score) are automatically rejected.
-                    </small>
-                </div>
-                
-                <form method="POST">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Job Title *</label>
-                            <input type="text" class="form-control" name="title" required>
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Job Type *</label>
-                            <select class="form-select" name="job_type" required>
-                                <option value="full-time">Full Time</option>
-                                <option value="intern">Internship</option>
-                                <option value="contract">Contract</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Company Name *</label>
-                            <input type="text" class="form-control" name="company" required>
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Contact Email *</label>
-                            <input type="email" class="form-control" name="email" required>
-                            <small class="text-muted">Must be a valid company email</small>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Job Description *</label>
-                        <textarea class="form-control" name="description" rows="5" required></textarea>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-8 mb-3">
-                            <label class="form-label">Application Link *</label>
-                            <input type="url" class="form-control" name="apply_link" 
-                                   id="applyLink" required>
-                            <div class="mt-2">
-                                <small>Risk Score: <span id="riskScore">0</span>/100</small>
-                                <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar" id="riskBar" style="width: 0%"></div>
-                                </div>
-                                <small id="riskMessage" class="text-muted">Enter URL to see risk score</small>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Location *</label>
-                            <input type="text" class="form-control" name="location" required>
-                        </div>
-                    </div>
-                    
-                    <div class="alert alert-warning" id="riskWarning" style="display: none;">
-                        <strong>Warning:</strong> High risk detected. This job may be rejected.
-                    </div>
-                    
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">Post Job</button>
-                    </div>
-                </form>
+            <div class="col-md-3">
+                <label class="form-label">Location</label>
+                <input type="text" name="location" class="form-control" value="{{ request.args.get('location', '') }}" placeholder="City, State">
             </div>
-        </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary mt-4">Filter</button>
+                <a href="/jobs" class="btn btn-outline-secondary mt-4">Clear</a>
+            </div>
+        </form>
     </div>
 </div>
 
-<script>
-const applyLink = document.getElementById('applyLink');
-const riskScore = document.getElementById('riskScore');
-const riskBar = document.getElementById('riskBar');
-const riskMessage = document.getElementById('riskMessage');
-const riskWarning = document.getElementById('riskWarning');
+<!-- Job Listings -->
+<div class="row">
+    {% for job in jobs.items %}
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="card-title">{{ job.title }}</h5>
+                    <!-- Risk badge for students and admins only -->
+                    {% if current_user.is_student() or current_user.is_admin() %}
+                        <span class="badge bg-{{ job.get_risk_badge()[1] }}">
+                            {{ job.get_risk_badge()[0] }}
+                        </span>
+                    {% endif %}
+                </div>
+                <p class="card-text text-muted mb-2">
+                    <i class="bi bi-building"></i> {{ job.company }}<br>
+                    <i class="bi bi-geo-alt"></i> {{ job.location }}<br>
+                    <i class="bi bi-briefcase"></i> {{ job.job_type|title }}
+                </p>
+                <p class="card-text">{{ job.description[:150] }}...</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">Posted {{ job.created_at.strftime('%b %d, %Y') }}</small>
+                    <a href="/job/{{ job.id }}" class="btn btn-sm btn-outline-primary">View Details</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            No jobs found matching your criteria.
+        </div>
+    </div>
+    {% endfor %}
+</div>
 
-function calculateRisk() {
-    const url = applyLink.value;
-    
-    if (!url) {
-        riskScore.textContent = '0';
-        riskBar.style.width = '0%';
-        riskMessage.textContent = 'Enter URL to see risk score';
-        riskWarning.style.display = 'none';
-        return;
-    }
-    
-    fetch('/calculate-risk', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({url: url, description: ''})
-    })
-    .then(response => response.json())
-    .then(data => {
-        riskScore.textContent = data.score;
-        riskBar.style.width = data.score + '%';
-        riskBar.className = `progress-bar bg-${data.color}`;
-        riskMessage.textContent = data.badge;
+<!-- Pagination -->
+{% if jobs.pages > 1 %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if jobs.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ jobs.prev_num }}{% if request.args.get('type') %}&type={{ request.args.get('type') }}{% endif %}{% if request.args.get('location') %}&location={{ request.args.get('location') }}{% endif %}">Previous</a>
+            </li>
+        {% endif %}
         
-        if (data.score > 70) {
-            riskWarning.style.display = 'block';
-        } else {
-            riskWarning.style.display = 'none';
-        }
-    })
-    .catch(() => {
-        riskScore.textContent = 'Error';
-        riskMessage.textContent = 'Could not calculate risk';
-    });
-}
-
-applyLink.addEventListener('blur', calculateRisk);
-applyLink.addEventListener('input', function() {
-    clearTimeout(this.timer);
-    this.timer = setTimeout(calculateRisk, 500);
-});
-</script>
+        {% for page_num in jobs.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+            {% if page_num %}
+                <li class="page-item {% if page_num == jobs.page %}active{% endif %}">
+                    <a class="page-link" href="?page={{ page_num }}{% if request.args.get('type') %}&type={{ request.args.get('type') }}{% endif %}{% if request.args.get('location') %}&location={{ request.args.get('location') }}{% endif %}">{{ page_num }}</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if jobs.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ jobs.next_num }}{% if request.args.get('type') %}&type={{ request.args.get('type') }}{% endif %}{% if request.args.get('location') %}&location={{ request.args.get('location') }}{% endif %}">Next</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
 {% endblock %}
